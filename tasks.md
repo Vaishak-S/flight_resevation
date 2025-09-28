@@ -124,7 +124,7 @@
 
 ----------------------------------------------------------------------------------------------------------------
 
-# Minimal folder/file checklist to create right now
+# folder/file checklist to complete
 
 * `backend/app/main.py` (FastAPI app)
 * `backend/app/api/bookings.py`
