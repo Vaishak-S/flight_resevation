@@ -1,50 +1,31 @@
+# tools.py
 import requests
+from typing import Dict
 
-BASE_URL = "http://127.0.0.1:8000/flight-reservation"  # FastAPI backend
+BASE_URL = "http://127.0.0.1:8000/flight-reservation"  # adjust if your FastAPI runs elsewhere
+TIMEOUT = 15
 
-# ----------------- BOOK TOOL -----------------
-def book_tool(payload: dict) -> dict:
-    """
-    payload example:
-    {
-        "passenger_name": "Vaishak S",
-        "origin": "BOM",
-        "destination": "BLR",
-        "date": "2025-10-10",
-        "time": "10:30",
-        "flight_class": "Economy"
-    }
-    """
+def book_tool(payload: Dict) -> Dict:
     try:
-        res = requests.post(f"{BASE_URL}/book", json=payload)
-        res.raise_for_status()
-        return res.json()
+        r = requests.post(f"{BASE_URL}/book-flight", json=payload, timeout=TIMEOUT)
+        r.raise_for_status()
+        return r.json()
     except Exception as e:
         return {"error": str(e)}
 
-# ----------------- CANCEL TOOL -----------------
-def cancel_tool(booking_reference: str) -> dict:
-    payload = {"booking_reference": booking_reference}
+def cancel_tool(booking_reference: str) -> Dict:
     try:
-        res = requests.post(f"{BASE_URL}/cancel", json=payload)
-        res.raise_for_status()
-        return res.json()
+        payload = {"booking_reference": booking_reference}
+        r = requests.post(f"{BASE_URL}/cancel-flight", json=payload, timeout=TIMEOUT)
+        r.raise_for_status()
+        return r.json()
     except Exception as e:
         return {"error": str(e)}
 
-# ----------------- RESCHEDULE TOOL -----------------
-def reschedule_tool(payload: dict) -> dict:
-    """
-    payload example:
-    {
-        "booking_reference": "BK-20250928-xxxx",
-        "new_date": "2025-10-12",
-        "new_time": "08:00"
-    }
-    """
+def reschedule_tool(payload: Dict) -> Dict:
     try:
-        res = requests.post(f"{BASE_URL}/reschedule", json=payload)
-        res.raise_for_status()
-        return res.json()
+        r = requests.post(f"{BASE_URL}/reschedule-flight", json=payload, timeout=TIMEOUT)
+        r.raise_for_status()
+        return r.json()
     except Exception as e:
         return {"error": str(e)}

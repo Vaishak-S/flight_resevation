@@ -1,18 +1,17 @@
-from llm_adapter import generate_response, USE_MOCK_LLM
+# test_llm_adapter.py
+from llm_adapter import generate_intent, llm_extract_slots, USE_MOCK_LLM
 
-def run_tests():
-    print("=== Testing generate_response ===")
-    test_inputs = [
-        "I want to book a flight from NYC to LA",
-        "Cancel my reservation please",
-        "Can I reschedule my ticket to tomorrow?",
-        "What's the weather today?",
-    ]
+tests = [
+    "Book flight for Vaishak S from BOM to BLR on 2025-10-10 at 10:30",
+    "Please cancel my booking BK-20250928-abc12345",
+    "Reschedule BK-20250928-abc12345 to 2025-10-12 08:00",
+    "I want to reserve a ticket from DEL to MAA on 2025-11-03 15:15. Name is John Doe"
+]
 
-    for user_input in test_inputs:
-        intent = generate_response(user_input)
-        print(f"Input: {user_input}\n -> Intent: {intent}\n")
-
-
-if __name__ == "__main__":
-    run_tests()
+print("USE_MOCK_LLM:", USE_MOCK_LLM)
+for t in tests:
+    intent = generate_intent(t)
+    print(f"Input: {t}\n -> Intent: {intent}")
+    slots = llm_extract_slots(t)
+    print(" -> Slots:", slots)
+    print("----")
