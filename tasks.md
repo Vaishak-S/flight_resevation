@@ -1,17 +1,3 @@
-Nice — clear goal. I won’t ask questions unless strictly needed; instead I’ll give a concrete, day-by-day **1-week plan** (7 days × 2 hours/day) of focused sub-tasks to get a minimal but working Streamlit + FastAPI + MCP-tooling flight booking demo. Each subtask has a short deliverable so you can check progress every session.
-
-# Plan assumptions (so the subtasks make sense)
-
-* Minimal viable product (MVP) that supports: **book**, **cancel**, **reschedule** flight flows via a chat UI backed by an LLM-driven MCP server that calls FastAPI endpoints.
-* Local dev stack: Python 3.10+, virtualenv/venv, FastAPI, Uvicorn, Streamlit, SQLAlchemy (SQLite for MVP), simple MCP server implemented as a small Python service (can be later replaced by a proper agent framework).
-* No external LLM provider locked in — implement an LLM adapter interface (so you can plug OpenAI/Anthropic/other later).
-* Keep the flows deterministic/simplified (no real payments, only reservations recorded in DB).
-
-If any of the above assumptions should change (DB choice, auth, provider), tell me and I’ll adapt the plan — otherwise proceed.
-
----
-
-# Week plan (2 hours per day)
 
 ## Day 1 — Project scaffolding & spec (2 × 60 min)
 
