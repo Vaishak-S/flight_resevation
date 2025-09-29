@@ -1,7 +1,0 @@
-/* Minimal reset and background */
-html, body, #root {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  background: #f6f8fa;
-}
