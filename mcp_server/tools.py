@@ -1,8 +1,9 @@
-# tools.py
+# mcp_server/tools.py
+import os
 import requests
 from typing import Dict
 
-BASE_URL = "http://127.0.0.1:8000/flight-reservation"  # adjust if your FastAPI runs elsewhere
+BASE_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000/flight-reservation")
 TIMEOUT = 15
 
 def book_tool(payload: Dict) -> Dict:
