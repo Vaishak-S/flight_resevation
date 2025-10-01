@@ -7,7 +7,7 @@ from typing import Dict
 from .prompt_template import INTENT_PROMPT, SLOT_PROMPT
 
 # Toggle between mock and real LLM
-USE_MOCK_LLM = False  # set True for deterministic testing
+USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "false").lower() in ("1", "true", "yes")
 
 # OpenAI API config (read key from env)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
