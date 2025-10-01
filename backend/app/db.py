@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 # PostgreSQL URL
 # Replace the placeholders with your actual DB credentials
 # Format: postgresql://username:password@host:port/database
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:@localhost:5432/flight_booking_db"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:@192.168.29.67:5432/flight_booking_db"
 
 # Create engine
 engine = create_engine(

@@ -1,51 +1,76 @@
 # llm_adapter.py
+import os
 import requests
 import json
 import re
 from typing import Dict
-from prompt_template import INTENT_PROMPT, SLOT_PROMPT
+from .prompt_template import INTENT_PROMPT, SLOT_PROMPT
 
 # Toggle between mock and real LLM
 USE_MOCK_LLM = False  # set True for deterministic testing
 
-# Local Ollama server config (adjust if necessary)
-OLLAMA_API_URL = "http://localhost:11434"  # default Ollama server
-# OLLAMA_MODEL_NAME = "gpt-oss:20b"          # change to your model if different
-OLLAMA_MODEL_NAME = "deepseek-v3.1:671b-cloud"          # change to your model if different
-
+# OpenAI API config (read key from env)
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+# Pick a chat-capable model you have access to. Change as needed.
+OPENAI_MODEL_NAME = "gpt-4o-mini"  # or "gpt-4o", "gpt-4o-realtime-preview", etc.
 
 REQUEST_TIMEOUT = 30  # seconds
 
 
-def _call_ollama(prompt: str, max_tokens: int = 60, temperature: float = 0.0) -> str:
+def _call_openai(prompt: str, max_tokens: int = 60, temperature: float = 0.0) -> str:
     """
-    Call Ollama generate endpoint synchronously and return text part (best-effort).
+    Call OpenAI Chat Completions endpoint and return the assistant text.
+    Uses the messages format with a single user message containing the prompt.
     """
+    if not OPENAI_API_KEY:
+        print("OPENAI_API_KEY not set in environment")
+        return ""
+
+    headers = {
+        "Authorization": f"Bearer {OPENAI_API_KEY}",
+        "Content-Type": "application/json",
+    }
+
     payload = {
-        "model": OLLAMA_MODEL_NAME,
-        "prompt": prompt,
+        "model": OPENAI_MODEL_NAME,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
         "temperature": temperature,
         "max_tokens": max_tokens,
-        "stream": False
+        "n": 1,
     }
+
     try:
-        r = requests.post(f"{OLLAMA_API_URL}/api/generate", json=payload, timeout=REQUEST_TIMEOUT)
-        r.raise_for_status()
-        data = r.json()
-        # Ollama might return {"response": "..."} or {"text": "..."} depending on version
-        text = (data.get("response") or data.get("text") or "")
-        if isinstance(text, list):  # some versions return list; join
+        resp = requests.post(OPENAI_API_URL, headers=headers, json=payload, timeout=REQUEST_TIMEOUT)
+        resp.raise_for_status()
+        data = resp.json()
+        # best-effort extract text
+        choices = data.get("choices") or []
+        if not choices:
+            return ""
+        # Chat-style
+        msg = choices[0].get("message", {}) if isinstance(choices[0], dict) else {}
+        text = msg.get("content") or choices[0].get("text") or ""
+        if isinstance(text, list):
             text = " ".join([t.get("content", "") for t in text])
         return text.strip()
     except Exception as e:
-        print("Ollama call failed:", e)
+        # non-fatal: print for debugging and return empty string to fallback
+        print("OpenAI call failed:", e, getattr(e, "response", ""))
+        try:
+            # attempt to surface useful json if present
+            print("response:", resp.text)
+        except Exception:
+            pass
         return ""
 
 
 def generate_intent(user_input: str) -> str:
     """
-    Use Ollama to generate a single-word intent: book/cancel/reschedule/unknown.
-    Falls back to simple rule-based detection if USE_MOCK_LLM or Ollama fails.
+    Use OpenAI to generate a single-word intent: book/cancel/reschedule/unknown.
+    Falls back to simple rule-based detection if USE_MOCK_LLM or OpenAI fails.
     """
     if USE_MOCK_LLM:
         ui = user_input.lower()
@@ -57,14 +82,12 @@ def generate_intent(user_input: str) -> str:
             return "reschedule"
         return "unknown"
 
-    # Call Ollama with constrained prompt
     prompt = INTENT_PROMPT.format(user_input=user_input)
-    text = _call_ollama(prompt, max_tokens=10, temperature=0.0).lower().strip()
+    text = _call_openai(prompt, max_tokens=12, temperature=0.0).lower().strip()
 
-    # Clean the response: keep only first token
     if not text:
         return "unknown"
-    # remove non-word characters
+    # keep only first token-like word
     text = re.split(r"\s+|\W+", text)[0]
     if text in {"book", "cancel", "reschedule", "unknown"}:
         return text
@@ -73,8 +96,8 @@ def generate_intent(user_input: str) -> str:
 
 def llm_extract_slots(user_input: str) -> Dict[str, str]:
     """
-    Use Ollama to extract slots in a strict JSON format.
-    If Ollama fails or returns invalid JSON, return empty slots.
+    Use OpenAI to extract slots in a strict JSON format.
+    If OpenAI fails or returns invalid JSON, return empty slots.
     """
     if USE_MOCK_LLM:
         return {
@@ -87,7 +110,7 @@ def llm_extract_slots(user_input: str) -> Dict[str, str]:
         }
 
     prompt = SLOT_PROMPT.format(user_input=user_input)
-    text = _call_ollama(prompt, max_tokens=200, temperature=0.0)
+    text = _call_openai(prompt, max_tokens=300, temperature=0.0)
     if not text:
         return {
             "passenger_name": "",
@@ -98,11 +121,10 @@ def llm_extract_slots(user_input: str) -> Dict[str, str]:
             "booking_reference": ""
         }
 
-    # Clean and parse JSON substring
     raw = text.strip()
-    # Remove leading/trailing code fences/backticks if present
+    # remove code fences/backticks if present
     raw = raw.strip("` \n")
-    # Find first { and last }
+    # find first { and last }
     s = raw.find("{")
     e = raw.rfind("}")
     try:
@@ -112,9 +134,12 @@ def llm_extract_slots(user_input: str) -> Dict[str, str]:
             # ensure all keys exist
             for k in ["passenger_name", "origin", "destination", "date", "time", "booking_reference"]:
                 parsed.setdefault(k, "")
+            # ensure values are strings
+            parsed = {k: (str(v) if v is not None else "") for k, v in parsed.items()}
             return parsed
     except Exception as ex:
-        print("Failed to parse JSON from Ollama slot extractor:", ex, "raw:", raw)
+        print("Failed to parse JSON from OpenAI slot extractor:", ex, "raw:", raw)
+
     # fallback empty
     return {
         "passenger_name": "",

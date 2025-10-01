@@ -4,8 +4,8 @@ import json
 from datetime import datetime
 from typing import Dict, Any
 
-from llm_adapter import generate_intent, llm_extract_slots, USE_MOCK_LLM
-from tools import book_tool, cancel_tool, reschedule_tool
+from .llm_adapter import generate_intent, llm_extract_slots, USE_MOCK_LLM
+from .tools import book_tool, cancel_tool, reschedule_tool
 
 # Use LLM to extract slots if regex heuristics fail
 USE_LLM_FOR_SLOTS = not USE_MOCK_LLM
