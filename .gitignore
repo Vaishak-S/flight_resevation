@@ -1,2 +1,5 @@
 # Virtual environments
 .venv/
+
+mcp_server/test/test_llm_adapter.py
+mcp_server/test/test_tools.py
