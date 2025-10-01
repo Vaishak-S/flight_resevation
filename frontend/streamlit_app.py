@@ -1,5 +1,9 @@
 import streamlit as st
-from ..mcp_server.mcp import handle_message  # import your MCP handler directly
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from mcp_server.mcp import handle_message  # import your MCP handler directly
 
 # --- Page setup ---
 st.set_page_config(page_title="Flight Reservation Assistant", page_icon="✈️", layout="centered")
